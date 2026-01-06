@@ -701,105 +701,7 @@
 
 
 
-// import React, { useEffect, useState } from 'react';
-// import {
-//   View, Text, Platform, PermissionsAndroid,
-//   Alert, ActivityIndicator, StyleSheet,
-// } from 'react-native';
-// import MapView, { Circle } from 'react-native-maps';
-// import Geolocation from '@react-native-community/geolocation';
-// import { getDistance } from 'geolib';
-// import axios from 'axios';
-
-// export default function AttendancePage() {
-//   const [location, setLocation] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [insideGeofence, setInsideGeofence] = useState(false);
-//   const [distToCenter, setDistToCenter] = useState(null);
-
-//   const HOSTEL_CENTER = { latitude: 12.6615160, longitude: 77.4505830 };
-//   const RADIUS = 150;
-
-//   useEffect(() => {
-//     const requestLocation = async () => {
-//       if (Platform.OS === 'android') {
-//         const granted = await PermissionsAndroid.request(
-//           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-//         );
-//         if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-//           Alert.alert('Permission denied');
-//           setLocation({ ...HOSTEL_CENTER, latitudeDelta: .01, longitudeDelta: .01 });
-//           setLoading(false);
-//           return;
-//         }
-//       }
-//       Geolocation.getCurrentPosition(({ coords }) => {
-//         const loc = { ...coords, latitudeDelta: .01, longitudeDelta: .01 };
-//         setLocation(loc);
-//         const d = getDistance(coords, HOSTEL_CENTER);
-//         setDistToCenter(d);
-//         setInsideGeofence(d <= RADIUS);
-//         setLoading(false);
-//       }, err => Alert.alert(err.message));
-//     };
-//     requestLocation();
-//   }, []);
-
-//   useEffect(() => {
-//     let id;
-//     if (!loading && location) {
-//       id = Geolocation.watchPosition(({ coords }) => {
-//         const d = getDistance(coords, HOSTEL_CENTER);
-//         setDistToCenter(d);
-//         const nowIn = d <= RADIUS;
-//         if (nowIn && !insideGeofence) {
-//           setInsideGeofence(true);
-//           axios.post('http://10.0.2.2:5000/api/attendance/checkin', {
-//             studentId: 'STUDENT_ID_123',
-//           }).catch(console.warn);
-//           Alert.alert('Checked in!');
-//         } else if (!nowIn && insideGeofence) {
-//           setInsideGeofence(false);
-//         }
-//       }, console.warn, { enableHighAccuracy: true, interval: 3000, distanceFilter: 1 });
-//     }
-//     return () => id && Geolocation.clearWatch(id);
-//   }, [loading, insideGeofence, location]);
-
-//   if (loading || !location) return <ActivityIndicator style={{flex:1}} />;
-
-//   return (
-//     <View style={{flex:1}}>
-//       <MapView style={{flex:1}} region={location} showsUserLocation>
-//         <Circle center={HOSTEL_CENTER} radius={RADIUS}
-//           strokeColor="rgba(0, 200, 0, 0.85)" fillColor="rgba(0, 200, 0, 0.3)" />
-//       </MapView>
-//       <View style={styles.status}>
-//         <Text style={{color: insideGeofence?'green':'red'}}>
-//           {insideGeofence?'INSIDE HOSTEL AREA':'OUTSIDE HOSTEL AREA'}
-//         </Text>
-//         <Text>Distance: {distToCenter} m</Text>
-//       </View>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   status: {
-//     position: 'absolute', top: 40, left: 20,
-//     backgroundColor: 'rgba(255,255,255,0.9)', padding: 8, borderRadius: 6
-//   }
-// });
-
-
-
-
-
-
-
-
-// AttendancePage.jsx
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, Platform, PermissionsAndroid,
   Alert, ActivityIndicator, StyleSheet,
@@ -809,24 +711,15 @@ import Geolocation from '@react-native-community/geolocation';
 import { getDistance } from 'geolib';
 import axios from 'axios';
 
-// 👇 Choose the right host for emulator vs. device
-const BASE_URL =
-  Platform.OS === 'android'
-    ? 'http://10.0.2.2:5000'
-    : 'http://localhost:5000';
-
 export default function AttendancePage() {
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [insideGeofence, setInsideGeofence] = useState(false);
-  const insideRef = useRef(false);
   const [distToCenter, setDistToCenter] = useState(null);
 
-  // Hostel location + radius
   const HOSTEL_CENTER = { latitude: 12.6615160, longitude: 77.4505830 };
-  const RADIUS = 150; // meters
+  const RADIUS = 150;
 
-  // 1️⃣ Get initial location & permission
   useEffect(() => {
     const requestLocation = async () => {
       if (Platform.OS === 'android') {
@@ -835,94 +728,55 @@ export default function AttendancePage() {
         );
         if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
           Alert.alert('Permission denied');
-          setLocation({ ...HOSTEL_CENTER, latitudeDelta: 0.01, longitudeDelta: 0.01 });
-          setLoading(false); // make sure we exit loading
+          setLocation({ ...HOSTEL_CENTER, latitudeDelta: .01, longitudeDelta: .01 });
+          setLoading(false);
           return;
         }
       }
-
-      Geolocation.getCurrentPosition(
-        ({ coords }) => {
-          console.log('[GEO] initial coords:', coords);
-          const loc = { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 };
-          setLocation(loc);
-
-          const d = getDistance(coords, HOSTEL_CENTER);
-          console.log('[GEO] dist to center:', d);
-          setDistToCenter(d);
-          setInsideGeofence(d <= RADIUS);
-          insideRef.current = d <= RADIUS;
-          setLoading(false);
-        },
-        err => {
-          Alert.alert(err.message);
-          setLoading(false);
-        },
-        { enableHighAccuracy: true }
-      );
+      Geolocation.getCurrentPosition(({ coords }) => {
+        const loc = { ...coords, latitudeDelta: .01, longitudeDelta: .01 };
+        setLocation(loc);
+        const d = getDistance(coords, HOSTEL_CENTER);
+        setDistToCenter(d);
+        setInsideGeofence(d <= RADIUS);
+        setLoading(false);
+      }, err => Alert.alert(err.message));
     };
-
     requestLocation();
   }, []);
 
-  // 2️⃣ Watch for geofence transitions
   useEffect(() => {
-    let watchId;
+    let id;
     if (!loading && location) {
-      watchId = Geolocation.watchPosition(
-        ({ coords }) => {
-          console.log('[GEO] watch coords:', coords);
-          const d = getDistance(coords, HOSTEL_CENTER);
-          console.log('[GEO] watched dist:', d, 'inside?', d <= RADIUS);
-          setDistToCenter(d);
-
-          const nowIn = d <= RADIUS;
-          // ENTER transition
-          if (nowIn && !insideRef.current) {
-            insideRef.current = true;
-            setInsideGeofence(true);
-            console.log('[API] Posting check-in…');
-            axios
-              .post(`${BASE_URL}/api/attendance/checkin`, {
-                studentId: 'STUDENT_ID_123',
-              })
-              .then(res => console.log('[API] checkin response:', res.data))
-              .catch(err => console.warn('[API] checkin error:', err.message));
-            Alert.alert('Checked in!');
-          }
-          // EXIT transition
-          else if (!nowIn && insideRef.current) {
-            insideRef.current = false;
-            setInsideGeofence(false);
-          }
-        },
-        err => console.warn('[GEO] watch error:', err.message),
-        { enableHighAccuracy: true, interval: 3000, distanceFilter: 1 }
-      );
+      id = Geolocation.watchPosition(({ coords }) => {
+        const d = getDistance(coords, HOSTEL_CENTER);
+        setDistToCenter(d);
+        const nowIn = d <= RADIUS;
+        if (nowIn && !insideGeofence) {
+          setInsideGeofence(true);
+          axios.post('http://10.0.2.2:5000/api/attendance/checkin', {
+            studentId: 'STUDENT_ID_123',
+          }).catch(console.warn);
+          Alert.alert('Checked in!');
+        } else if (!nowIn && insideGeofence) {
+          setInsideGeofence(false);
+        }
+      }, console.warn, { enableHighAccuracy: true, interval: 3000, distanceFilter: 1 });
     }
+    return () => id && Geolocation.clearWatch(id);
+  }, [loading, insideGeofence, location]);
 
-    return () => {
-      if (watchId != null) Geolocation.clearWatch(watchId);
-    };
-  }, [loading, location]);
-
-  if (loading || !location) {
-    return <ActivityIndicator style={{ flex: 1 }} size="large" />;
-  }
+  if (loading || !location) return <ActivityIndicator style={{flex:1}} />;
 
   return (
-    <View style={{ flex: 1 }}>
-      <MapView style={{ flex: 1 }} region={location} showsUserLocation>
-        <Circle
-          center={HOSTEL_CENTER}
-          radius={RADIUS}
-          strokeColor="rgba(0,200,0,0.85)"
-          fillColor="rgba(0,200,0,0.3)"
-        />
+    <View style={{flex:1}}>
+      <MapView style={{flex:1}} region={location} showsUserLocation>
+        <Circle center={HOSTEL_CENTER} radius={RADIUS}
+          strokeColor="rgba(0, 200, 0, 0.85)" fillColor="rgba(0, 200, 0, 0.3)" />
       </MapView>
       <View style={styles.status}>
-        <Text style={{ color: insideGeofence ? 'green' : 'red' }}>
-          {insideGeofence ? 'INSIDE HOSTEL AREA' : 'OUTSIDE HOSTEL AREA'}
+        <Text style={{color: insideGeofence?'green':'red'}}>
+          {insideGeofence?'INSIDE HOSTEL AREA':'OUTSIDE HOSTEL AREA'}
         </Text>
         <Text>Distance: {distToCenter} m</Text>
       </View>
@@ -932,11 +786,157 @@ export default function AttendancePage() {
 
 const styles = StyleSheet.create({
   status: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    padding: 8,
-    borderRadius: 6,
-  },
+    position: 'absolute', top: 40, left: 20,
+    backgroundColor: 'rgba(255,255,255,0.9)', padding: 8, borderRadius: 6
+  }
 });
+
+
+
+
+
+
+
+
+// // AttendancePage.jsx
+// import React, { useEffect, useState, useRef } from 'react';
+// import {
+//   View, Text, Platform, PermissionsAndroid,
+//   Alert, ActivityIndicator, StyleSheet,
+// } from 'react-native';
+// import MapView, { Circle } from 'react-native-maps';
+// import Geolocation from '@react-native-community/geolocation';
+// import { getDistance } from 'geolib';
+// import axios from 'axios';
+
+// // 👇 Choose the right host for emulator vs. device
+// const BASE_URL =
+//   Platform.OS === 'android'
+//     ? 'http://10.0.2.2:5000'
+//     : 'http://localhost:5000';
+
+// export default function AttendancePage() {
+//   const [location, setLocation] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [insideGeofence, setInsideGeofence] = useState(false);
+//   const insideRef = useRef(false);
+//   const [distToCenter, setDistToCenter] = useState(null);
+
+//   // Hostel location + radius
+//   const HOSTEL_CENTER = { latitude: 12.6615160, longitude: 77.4505830 };
+//   const RADIUS = 150; // meters
+
+//   // 1️⃣ Get initial location & permission
+//   useEffect(() => {
+//     const requestLocation = async () => {
+//       if (Platform.OS === 'android') {
+//         const granted = await PermissionsAndroid.request(
+//           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+//         );
+//         if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+//           Alert.alert('Permission denied');
+//           setLocation({ ...HOSTEL_CENTER, latitudeDelta: 0.01, longitudeDelta: 0.01 });
+//           setLoading(false); // make sure we exit loading
+//           return;
+//         }
+//       }
+
+//       Geolocation.getCurrentPosition(
+//         ({ coords }) => {
+//           console.log('[GEO] initial coords:', coords);
+//           const loc = { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+//           setLocation(loc);
+
+//           const d = getDistance(coords, HOSTEL_CENTER);
+//           console.log('[GEO] dist to center:', d);
+//           setDistToCenter(d);
+//           setInsideGeofence(d <= RADIUS);
+//           insideRef.current = d <= RADIUS;
+//           setLoading(false);
+//         },
+//         err => {
+//           Alert.alert(err.message);
+//           setLoading(false);
+//         },
+//         { enableHighAccuracy: true }
+//       );
+//     };
+
+//     requestLocation();
+//   }, []);
+
+//   // 2️⃣ Watch for geofence transitions
+//   useEffect(() => {
+//     let watchId;
+//     if (!loading && location) {
+//       watchId = Geolocation.watchPosition(
+//         ({ coords }) => {
+//           console.log('[GEO] watch coords:', coords);
+//           const d = getDistance(coords, HOSTEL_CENTER);
+//           console.log('[GEO] watched dist:', d, 'inside?', d <= RADIUS);
+//           setDistToCenter(d);
+
+//           const nowIn = d <= RADIUS;
+//           // ENTER transition
+//           if (nowIn && !insideRef.current) {
+//             insideRef.current = true;
+//             setInsideGeofence(true);
+//             console.log('[API] Posting check-in…');
+//             axios
+//               .post(`${BASE_URL}/api/attendance/checkin`, {
+//                 studentId: 'STUDENT_ID_123',
+//               })
+//               .then(res => console.log('[API] checkin response:', res.data))
+//               .catch(err => console.warn('[API] checkin error:', err.message));
+//             Alert.alert('Checked in!');
+//           }
+//           // EXIT transition
+//           else if (!nowIn && insideRef.current) {
+//             insideRef.current = false;
+//             setInsideGeofence(false);
+//           }
+//         },
+//         err => console.warn('[GEO] watch error:', err.message),
+//         { enableHighAccuracy: true, interval: 3000, distanceFilter: 1 }
+//       );
+//     }
+
+//     return () => {
+//       if (watchId != null) Geolocation.clearWatch(watchId);
+//     };
+//   }, [loading, location]);
+
+//   if (loading || !location) {
+//     return <ActivityIndicator style={{ flex: 1 }} size="large" />;
+//   }
+
+//   return (
+//     <View style={{ flex: 1 }}>
+//       <MapView style={{ flex: 1 }} region={location} showsUserLocation>
+//         <Circle
+//           center={HOSTEL_CENTER}
+//           radius={RADIUS}
+//           strokeColor="rgba(0,200,0,0.85)"
+//           fillColor="rgba(0,200,0,0.3)"
+//         />
+//       </MapView>
+//       <View style={styles.status}>
+//         <Text style={{ color: insideGeofence ? 'green' : 'red' }}>
+//           {insideGeofence ? 'INSIDE HOSTEL AREA' : 'OUTSIDE HOSTEL AREA'}
+//         </Text>
+//         <Text>Distance: {distToCenter} m</Text>
+//       </View>
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   status: {
+//     position: 'absolute',
+//     top: 40,
+//     left: 20,
+//     backgroundColor: 'rgba(255,255,255,0.9)',
+//     padding: 8,
+//     borderRadius: 6,
+//   },
+// });
